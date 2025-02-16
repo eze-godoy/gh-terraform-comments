@@ -22,4 +22,4 @@ runs:
     - name: Run the action
       shell: bash
       run: |
-        python src/main.py
+        python src/main.py ${{ inputs.plan }}
