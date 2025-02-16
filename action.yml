@@ -1,5 +1,9 @@
 name: 'Comment Terraform Plan'
 description: 'A cool Github Action to put easy-to-read comments for TF Plan'
+inputs:
+  plan:
+    description: 'The path to the JSON File containing the Terraform Plan'
+    required: true
 
 runs:
   using: 'composite'
