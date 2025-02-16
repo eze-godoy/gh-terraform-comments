@@ -1,0 +1,21 @@
+name: 'Comment Terraform Plan'
+description: 'A cool Github Action to put easy-to-read comments for TF Plan'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run the action
+      shell: bash
+      run: |
+        python src/main.py
