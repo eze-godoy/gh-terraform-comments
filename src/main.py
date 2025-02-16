@@ -1,5 +1,7 @@
 import json
 import argparse
+import os
+import requests
 
 def format_create_or_delete(resource, prefix):
     """Formats a full resource with '+' for create or '-' for delete."""
@@ -42,14 +44,14 @@ def format_update(before, after):
                     diff_lines.append(f"{spaces}],")
 
         elif isinstance(before, list) and isinstance(after, list):
-            if all(isinstance(item, str) for item in before + after):  # Handle lists of strings
+            if all(isinstance(item, str) for item in before + after):
                 removed = set(before) - set(after)
                 added = set(after) - set(before)
                 for item in removed:
                     diff_lines.append(f'- {spaces}"{item}",')
                 for item in added:
                     diff_lines.append(f'+ {spaces}"{item}",')
-            elif all(isinstance(item, dict) for item in before + after):  # Handle lists of dicts
+            elif all(isinstance(item, dict) for item in before + after):
                 for old_item, new_item in zip(before, after):
                     diff_lines.append(f'{spaces}{{')
                     recursive_diff(old_item, new_item, indent + 2)
@@ -60,7 +62,6 @@ def format_update(before, after):
             diff_lines.append(f'+ {spaces}{json.dumps(after)},')
 
     recursive_diff(before, after)
-
     diff_lines.append("```")
     return "\n".join(diff_lines)
 
@@ -104,10 +105,38 @@ def process_tf_plan(json_path):
 
     return "\n".join(md_output)
 
+def post_to_github_pr(comment):
+    """Posts a comment to a GitHub Pull Request using GitHub Actions environment variables."""
+    github_token = os.getenv("GITHUB_TOKEN")
+    repo = os.getenv("GITHUB_REPOSITORY")  # e.g., "user/repo"
+    pr_number = os.getenv("GITHUB_PR_NUMBER")  # If set manually
+
+    if not pr_number:  # Automatically get PR number from GitHub Actions
+        event_path = os.getenv("GITHUB_EVENT_PATH")
+        if event_path and os.path.exists(event_path):
+            with open(event_path, "r") as f:
+                event_data = json.load(f)
+                pr_number = event_data.get("pull_request", {}).get("number")
+
+    if not github_token or not repo or not pr_number:
+        print("❌ Missing required environment variables (GITHUB_TOKEN, GITHUB_REPOSITORY, or PR number)")
+        return
+
+    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
+    headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
+    data = json.dumps({"body": comment})
+
+    response = requests.post(url, headers=headers, data=data)
+
+    if response.status_code == 201:
+        print("✅ Comment posted successfully!")
+    else:
+        print(f"❌ Failed to post comment: {response.status_code}, Response: {response.text}")
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process Terraform JSON plan into Markdown format.")
+    parser = argparse.ArgumentParser(description="Process Terraform JSON plan and post results to GitHub PR.")
     parser.add_argument("json_path", help="Path to the Terraform JSON plan file")
     args = parser.parse_args()
 
     markdown_output = process_tf_plan(args.json_path)
-    print(markdown_output)
+    post_to_github_pr(markdown_output)
