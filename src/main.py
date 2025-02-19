@@ -4,46 +4,10 @@ import os
 import requests
 import logging
 
-from datetime import datetime
-
-def setup_logging():
-    """Configure JSON logging using standard library."""
-    class JsonFormatter(logging.Formatter):
-        def format(self, record):
-            log_data = {
-                'timestamp': datetime.utcfromtimestamp(record.created).isoformat(),
-                'level': record.levelname,
-                'message': record.getMessage(),
-                'name': record.name
-            }
-            
-            # Add extra fields if they exist
-            if hasattr(record, 'extras'):
-                log_data.update(record.extras)
-                
-            # Add exception info if present
-            if record.exc_info:
-                log_data['exception'] = self.formatException(record.exc_info)
-
-            return json.dumps(log_data)
-
-    # Get log level from environment variable, default to INFO
-    log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
-    
-    logger = logging.getLogger()
-    logger.setLevel(log_level)
-    
-    # Remove any existing handlers
-    logger.handlers.clear()
-    
-    # Create handler
-    handler = logging.StreamHandler()
-    handler.setFormatter(JsonFormatter())
-    logger.addHandler(handler)
-    
-    return logger
-
-logger = setup_logging()
+# Configure logging
+logger = logging.getLogger()
+log_level = os.environ.get('log_level', 'DEBUG').upper()
+logger.setLevel(getattr(logging, log_level, logging.INFO))
 
 def format_create_or_delete(resource, prefix):
     """Formats a full resource with '+' for create or '-' for delete."""
