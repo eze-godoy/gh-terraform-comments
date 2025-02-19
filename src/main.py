@@ -128,7 +128,7 @@ def post_to_github_pr(comment):
         print("❌ Missing required environment variables (GITHUB_TOKEN, GITHUB_REPOSITORY, or PR number)")
         return
 
-    logger.info("Posting comment to GitHub PR", extras={"repo": repo, "pr_number": pr_number})
+    logger.info(f"Posting to Github repository: {repo}, PR: {pr_number}")
 
     url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
