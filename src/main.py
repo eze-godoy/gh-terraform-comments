@@ -2,6 +2,9 @@ import json
 import argparse
 import os
 import requests
+import logging
+
+from datetime import datetime
 
 def setup_logging():
     """Configure JSON logging using standard library."""
