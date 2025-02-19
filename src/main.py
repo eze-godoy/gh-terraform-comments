@@ -3,6 +3,45 @@ import argparse
 import os
 import requests
 
+def setup_logging():
+    """Configure JSON logging using standard library."""
+    class JsonFormatter(logging.Formatter):
+        def format(self, record):
+            log_data = {
+                'timestamp': datetime.utcfromtimestamp(record.created).isoformat(),
+                'level': record.levelname,
+                'message': record.getMessage(),
+                'name': record.name
+            }
+            
+            # Add extra fields if they exist
+            if hasattr(record, 'extras'):
+                log_data.update(record.extras)
+                
+            # Add exception info if present
+            if record.exc_info:
+                log_data['exception'] = self.formatException(record.exc_info)
+
+            return json.dumps(log_data)
+
+    # Get log level from environment variable, default to INFO
+    log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    
+    logger = logging.getLogger()
+    logger.setLevel(log_level)
+    
+    # Remove any existing handlers
+    logger.handlers.clear()
+    
+    # Create handler
+    handler = logging.StreamHandler()
+    handler.setFormatter(JsonFormatter())
+    logger.addHandler(handler)
+    
+    return logger
+
+logger = setup_logging()
+
 def format_create_or_delete(resource, prefix):
     """Formats a full resource with '+' for create or '-' for delete."""
     lines = ["```diff"]
@@ -121,6 +160,8 @@ def post_to_github_pr(comment):
     if not github_token or not repo or not pr_number:
         print("❌ Missing required environment variables (GITHUB_TOKEN, GITHUB_REPOSITORY, or PR number)")
         return
+
+    logger.info("Posting comment to GitHub PR", extras={"repo": repo, "pr_number": pr_number})
 
     url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/comments"
     headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
