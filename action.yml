@@ -4,6 +4,15 @@ inputs:
   plan:
     description: 'The path to the JSON File containing the Terraform Plan'
     required: true
+  # GITHUB_TOKEN:
+  #   description: 'The GITHUB_TOKEN secret'
+  #   required: true
+  # GITHUB_REPOSITORY:
+  #   description: 'The Github Repository name'
+  #   required: true
+  # GITHUB_PR_NUMBER:
+  #   description: 'The Github PR Number'
+  #   required: true
 
 runs:
   using: 'composite'
@@ -21,5 +30,9 @@ runs:
 
     - name: Run the action
       shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ inputs.GITHUB_REPOSITORY }}
+        GITHUB_PR_NUMBER: ${{ inputs.GITHUB_PR_NUMBER }}
       run: |
-        python ${{ github.action_path }}/src/main.py ${{ inputs.plan }}
+        python ${{ github.action_path }}/src/main.py ${{ github.workspace }}/${{ inputs.plan }}
